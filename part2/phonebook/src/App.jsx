@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import phonebookServices from './services/phonebook'
 
-const PersonField = (props) => <div>{props.person.name} {props.person.number}</div>
+const PersonField = (props) => <div>{props.person.name} {props.person.number}<button onClick ={props.removeEntry}>delete</button></div>
 
 const Search = ({onFilterChange,filterName}) => {
   return(
@@ -38,24 +38,55 @@ const App = () => {
   const [filterName, setFilterName] = useState('');
 
   useEffect(()=>{
-    axios
-        .get('http://localhost:3001/persons')
-        .then(response => setPersons(response.data))
+    phonebookServices
+      .getAll()
+      .then(persons => {
+        console.log(persons)
+        setPersons(persons)
+      })
+    
   },[])
   console.log(persons.length)
   
   function addContactHandler(e) {
     e.preventDefault();
     console.log(e);
-    if (persons.find((person)=>person.name === newName)){
-      alert(`${newName} is already added to phonebook`);
+    let findPerson =  persons.find((person)=>person.name === newName);
+    if (findPerson){
+      if (confirm(`${newName} is already added to phonebook, do you want to update number?`)){
+        phonebookServices
+          .update({name: findPerson.name, number: newNumber, id: findPerson.id})
+          .then((response)=>{
+            let newPersons = [...persons];
+            newPersons[newPersons.indexOf(findPerson)] = response;
+            setPersons(newPersons);
+            setNewName('');
+            setNewNumber('');
+          })
+      }
       return;
     }
-    let newPersons = persons.concat({name: newName, number: newNumber});
-    console.log(newPersons);
-    setPersons(newPersons);
-    setNewName('');
-    setNewNumber('');
+    let newPerson = {name: newName, number: newNumber};
+    console.log(newPerson);
+    phonebookServices
+      .add(newPerson)
+      .then(response => {
+        setPersons(persons.concat(response));
+        setNewName('');
+        setNewNumber('');
+      })
+
+  }
+
+  function removeEntry(person){
+    if(confirm(`Do you want to delete ${person.name} from phonebook?`)){
+      phonebookServices
+        .remove(person.id)
+        .then(response => {
+          setPersons(persons.filter((person)=>person.id != response.id))
+        })
+        .catch(()=>alert(`An error occured`))
+    }
   }
 
   function nameChangeHandler(e){
@@ -79,10 +110,17 @@ const App = () => {
       {
         persons
           .filter((person) => person.name.includes(filterName )|| filterName =='')
-          .map((person) => <PersonField person ={person} key ={person.name}/>)
+          .map((person) => <PersonField person ={person} key ={person.name} removeEntry={()=>removeEntry(person)}/>)
       }
+
     </div>
   )
 }
 
 export default App
+
+/*      {
+        persons
+          .filter((person) => person.name.includes(filterName )|| filterName =='')
+          .map((person) => <PersonField person ={person} key ={person.name}/>)
+          */
