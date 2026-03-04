@@ -29,11 +29,6 @@
       "name": "Duda",
       "number": "99-885",
       "id": "6f0c"
-    },
-    {
-      "id": "ec6c",
-      "name": "Duba",
-      "number": "06"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
