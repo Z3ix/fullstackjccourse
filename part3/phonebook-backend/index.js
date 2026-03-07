@@ -1,14 +1,16 @@
 const express = require('express');
 const app = express()
 const morgan = require('morgan')
-
-
+const cors = require ('cors')
+app.use(cors());
 app.use(express.json());
+
 
 morgan.token('data',(req) =>{
     return JSON.stringify(req.body)
 })
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'));
+
 
 let data = [ 
     { 
@@ -75,6 +77,7 @@ function getNewUniqueId(startId) {
     const MAX_IDS = 9e9;
     const ids = data.map(item => item.id)
     let newId = startId;
+    console.log('Generating new id from '+newId)
     while (ids.find(id => id == newId)) {
         newId = Math.floor(Math.random() * MAX_IDS);
         console.log(`NewID ${newId}`);
@@ -94,14 +97,30 @@ app.post('/api/persons', (request, response) =>{
             error: 'name must be unique' 
         })    
     }
-    const person = { name: newEntry.name, 
-                    number: newEntry.number, 
-                    id: getNewUniqueId(newEntry.id)}
+    const person = {id: String(getNewUniqueId(newEntry.id || 0)) ,
+                    name: newEntry.name, 
+                    number: newEntry.number
+                    }
     data.push(person)
     console.log('person added')
     response.json(person)
 })
 
+app.put('/api/persons/:id', (request, response) =>{
+    const updatedPerson = request.body;
+
+    if (data.find(item => item.id == request.params.id)) {
+        data = data.map(
+            item => item.id == request.params.id 
+            ? {name: updatedPerson.name, number: updatedPerson.number, id: request.params.id}
+            :item
+        );
+        response.status(200).json(updatedPerson);
+        return;
+    }
+    response.status(400).end();
+
+})
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
