@@ -2,6 +2,11 @@ const express = require('express');
 const app = express()
 const morgan = require('morgan')
 const cors = require ('cors')
+require('dotenv').config();
+//console.log(process.env);
+require("node:dns/promises").setServers(["1.1.1.1", "8.8.8.8"]); // Reqired to resolve DNS issue on windows
+const Person = require('./modules/person');
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static('dist'))
@@ -12,66 +17,49 @@ morgan.token('data',(req) =>{
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :data'));
 
 
-let data = [ 
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
 
 app.get('/', (request, response) =>{
     response.send("Hello world");
 })
 
 app.get('/api/persons', (request, response) => {
-    console.log(data);
-    response.json(data);
+    Person.find({}).then(result =>{
+        console.log(result);
+        response.json(result);
+    })
+
 
 })
 
 app.get('/info', (request, response) => {
-    const body =`<div> Phonebook has info for ${data.length} people</div>
-                 <div> ${new Date()}</div>`
-    response.send(body);
+    Person.find({}).then(result =>{
+        const body =`<div> Phonebook has info for ${result.length} people</div>
+                    <div> ${new Date()}</div>`
+        response.send(body);
+    })
+
 })
 
 app.get('/api/persons/:id', (request, response) =>{
-    const person = data.find((item)=> item.id == request.params.id)
-    if (!person) {
-        console.log("no such entry")
-        response.status(204).send();
-         
-    } else {
-    response.json(person);}
+    Person.findById(request.params.id).then(result => {
+        console.log(result);
+        response.json(result);
+    })
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-    if(data.find((item) => item.id == request.params.id)) {
-        data = data.filter(item => item.id !== request.params.id);
-        console.log('deleted');
-        response.status(204).end();
-    } else {
-        console.log('no such entry');
-        response.status(404).end();
-    }
-
+app.delete('/api/persons/:id', (request, response, next) => {
+    Person.findByIdAndDelete(String(request.params.id))
+        .then(result =>{
+            console.log(`entry deleted `);
+            console.log(result);
+            response.status(204).end()
+        })
+        .catch(error =>{
+            next(error);
+        })
 })
+
+
 
 function getNewUniqueId(startId) {
     const MAX_IDS = 9e9;
@@ -92,35 +80,51 @@ app.post('/api/persons', (request, response) =>{
         return response.status(400).json({ 
             error: 'name or number is missing' 
         })
-    } else if (data.find(item => item.name == newEntry.name)){
-        return response.status(400).json({ 
-            error: 'name must be unique' 
-        })    
     }
-    const person = {id: String(getNewUniqueId(newEntry.id || 0)) ,
-                    name: newEntry.name, 
-                    number: newEntry.number
-                    }
-    data.push(person)
-    console.log('person added')
-    response.json(person)
+    Person.find({name: newEntry.name}).then(result => {
+        if (result.length > 0){
+            return response.status(400).json({ 
+                error: 'name must be unique' 
+            })   
+        } else {
+            const newPerson = new Person({
+                name: newEntry.name,
+                number: newEntry.number,
+            });
+            newPerson.save().then(result =>{
+                console.log('New entry added');
+                response.json(result);
+            })
+        }
+    });
+
 })
+
 
 app.put('/api/persons/:id', (request, response) =>{
-    const updatedPerson = request.body;
+    const {name, number} = request.body;
 
-    if (data.find(item => item.id == request.params.id)) {
-        data = data.map(
-            item => item.id == request.params.id 
-            ? {name: updatedPerson.name, number: updatedPerson.number, id: request.params.id}
-            :item
-        );
-        response.status(200).json(updatedPerson);
-        return;
-    }
-    response.status(400).end();
+    Person.findById(request.params.id).then((result) =>{
+        if (!result.name) response.status(404).end();
+        result.number = number;
+        result.save().then(()=>{
+            response.json(result)
+        })
+    })
 
 })
+
+
+const errorHandler = (error, request, response, next) => {
+    if (error.name == "CastError") {
+        console.log("Invalid ID format");
+        response.status(500).end;
+    }
+    
+}
+
+app.use(errorHandler);
+
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
