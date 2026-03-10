@@ -40,15 +40,16 @@ app.get('/info', (request, response) => {
 
 })
 
-app.get('/api/persons/:id', (request, response) =>{
+app.get('/api/persons/:id', (request, response, next) =>{
     Person.findById(request.params.id).then(result => {
         console.log(result);
         response.json(result);
     })
+    .catch(e => next(e))
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
-    Person.findByIdAndDelete(String(request.params.id))
+    Person.findByIdAndDelete(request.params.id)
         .then(result =>{
             console.log(`entry deleted `);
             console.log(result);
@@ -73,8 +74,9 @@ function getNewUniqueId(startId) {
     return newId;
 }
 
-app.post('/api/persons', (request, response) =>{
+app.post('/api/persons', (request, response, next) =>{
     const newEntry = request.body;
+    console.log(newEntry);
     
     if(!(newEntry.name && newEntry.number)) {
         return response.status(400).json({ 
@@ -95,30 +97,55 @@ app.post('/api/persons', (request, response) =>{
                 console.log('New entry added');
                 response.json(result);
             })
-        }
-    });
+            .catch(error => {
+                console.log('error occured on saving');
+                next(error);
+            })
 
+        }
+    })
+    .catch( e => {
+        console.log('error occured on find');
+        next(e)
+    })
+    
 })
 
 
-app.put('/api/persons/:id', (request, response) =>{
-    const {name, number} = request.body;
+app.put('/api/persons/:id', (request, response, next) =>{
+
 
     Person.findById(request.params.id).then((result) =>{
-        if (!result.name) response.status(404).end();
-        result.number = number;
+        console.log(result);
+        if (!result) return response.status(404).json({error: "NotFound"});
+        result.number = request.body.number;
         result.save().then(()=>{
             response.json(result)
         })
+        .catch(error => next(error))
     })
+    .catch(error => next(error))
 
 })
 
 
 const errorHandler = (error, request, response, next) => {
+    console.log('logging New error')
     if (error.name == "CastError") {
         console.log("Invalid ID format");
-        response.status(500).end;
+        response.status(500).json({error: "CastError"});
+    } else if(error.name == "ValidationError") {
+        console.log("Validation Error");
+        if (error.errors.name) {
+          response.status(400).json({error: "NameValidationError"});  
+        } else if (error.errors.number) {
+          response.status(400).json({error: "NumberValidationError"});  
+        } else {
+        response.status(400).json({error: "ValidationError"});
+        }
+    } else {
+        console.log('Unknown error')
+        response.status(500).json({error: "UnknownError"})
     }
     
 }
