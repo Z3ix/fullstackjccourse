@@ -57,4 +57,17 @@ const singleblog = {
     likes: 99,
     __v: 0
 }
-module.exports = {blogs, singleblog}
+
+const users = [
+  {
+    username: "admin",
+    name: "Some name",
+    passwordHash: "$2b$10$wj4kM6i5sqUuGs6HCbw6GOkKM1G4H53gOzs0mtuLvxIY9BSvvLCPe"
+  },
+  {
+    username: "root",
+    name: "Other name",
+    passwordHash: "$2b$10$qWK90r0JN2u1MO8Tv/taCexBmhb5yW5iITTzUSEKngHxaFIErFizu"
+  }
+]
+module.exports = {blogs, singleblog, users}

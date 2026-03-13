@@ -1,14 +1,26 @@
 GET http://localhost:3003/api/blogs
+
 ###
 POST http://localhost:3003/api/blogs 
 Content-Type: application/json
 
 {
-    "_id": "9a422bc61b54a686235d17fc",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJvb3QiLCJpZCI6IjY5YjQwZWUyYWQ3MTY1ZDI5OTI3NzI1YyIsImlhdCI6MTc3MzQxODQwNX0.RohUfgnOJfXqEWM6q6zPVlVU1q8pWOHOwTJ9CjZPZBY",
     "title": "Test title",
     "author": "I, me and myself",
     "url": "http://no.where/",
-    "likes": "5"
+    "likes": "58888"
+}
+###
+POST http://localhost:3003/api/blogs 
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJvb3QiLCJpZCI6IjY5YjQwZWUyYWQ3MTY1ZDI5OTI3NzI1YyIsImlhdCI6MTc3MzQxODQwNX0.RohUfgnOJfXqEWM6q6zPVlVU1q8pWOHOwTJ9CjZPZBY
+
+{
+    "title": "Test title",
+    "author": "I, me and myself",
+    "url": "http://no.where/",
+    "likes": "58888"
 }
 
 ###
@@ -16,9 +28,108 @@ PUT http://localhost:3003/api/blogs/9a422bc61b54a686235d17fc
 Content-Type: application/json
 
 {
-    "_id": "9a422bc61b54a686235d17fc",
+    "token": "2315152",
     "title": "Test title",
     "author": "I, me and myself",
     "url": "http://no.where/",
     "likes": "525"
 }
+
+###
+POST http://localhost:3003/api/blogs 
+Content-Type: application/json
+
+{
+    "title": "Test title",
+    "author": "I, me and myself",
+    "url": "http://no.where/",
+    "likes": "5"
+}
+
+###
+POST http://localhost:3003/api/users 
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "name": "Some name",
+    "password": "testpass123"
+}
+###
+POST http://localhost:3003/api/users 
+Content-Type: application/json
+
+{
+    "username": "root",
+    "name": "Some othername",
+    "password": "testpass125"
+}
+###
+POST http://localhost:3003/api/users 
+Content-Type: application/json
+
+{
+    "username": "root2",
+    "name": "Some othername"
+
+}
+###
+GET http://localhost:3003/api/users
+
+###
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+    "username": "root",
+    "password": "testpass125"
+
+}
+###
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+    "username": "admin",
+    "password": "testpass123"
+
+}
+###
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+    "username": "root",
+    "password": "testpass1225"
+
+}
+###
+POST http://localhost:3003/api/login
+Content-Type: application/json
+
+{
+    "username": "root2",
+    "password": "testpass125"
+
+}
+###
+DELETE http://localhost:3003/api/blogs
+Content-Type: application/json
+
+{
+    "bypass": "true"
+}
+
+###
+DELETE http://localhost:3003/api/users
+Content-Type: application/json
+
+{
+    "bypass": "true"
+}
+
+###
+DELETE http://localhost:3003/api/blogs/69b439106c74521d19b38b22
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InJvb3QiLCJpZCI6IjY5YjQwZWUyYWQ3MTY1ZDI5OTI3NzI1YyIsImlhdCI6MTc3MzQxOTc1MH0.IQwcRkNfodlDZVFMkJnsWpKIGy-Bn1CN4n7Jfk6JKEg
+###
+GET http://localhost:3003/api/blogs/69b439106c74521d19b38b22
