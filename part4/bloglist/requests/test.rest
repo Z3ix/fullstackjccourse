@@ -4,8 +4,21 @@ POST http://localhost:3003/api/blogs
 Content-Type: application/json
 
 {
+    "_id": "9a422bc61b54a686235d17fc",
     "title": "Test title",
     "author": "I, me and myself",
     "url": "http://no.where/",
     "likes": "5"
+}
+
+###
+PUT http://localhost:3003/api/blogs/9a422bc61b54a686235d17fc
+Content-Type: application/json
+
+{
+    "_id": "9a422bc61b54a686235d17fc",
+    "title": "Test title",
+    "author": "I, me and myself",
+    "url": "http://no.where/",
+    "likes": "525"
 }
