@@ -2,10 +2,35 @@ import { useState } from 'react'
 import Authors from './components/Authors'
 import Books from './components/Books'
 import NewBook from './components/NewBook'
-import { Link, Route, Routes } from 'react-router'
+import { Link, Route, Routes, useNavigate } from 'react-router'
+import LoginForm from './components/Login'
+import { useApolloClient } from '@apollo/client/react'
+import FavoriteBooks from './components/FavoriteBooks'
 
 const App = () => {
-  const [page, setPage] = useState('authors')
+  const [token, setToken] = useState(window.localStorage.getItem('userToken'))
+  const [error, setError] = useState('')
+  const client = useApolloClient()
+  const navigate = useNavigate()
+
+  const timedError = (message, delay) => {
+    setError(message)
+    setTimeout(()=>setError(''),delay*1000)
+  }
+
+  const logout = () => {
+    setToken('')
+    window.localStorage.clear()
+    client.resetStore()
+    //navigate('/')
+  }
+  const errorStyle = {
+    border: "2px solid red",
+    padding: "5px",
+    color: "red",
+    backgroundColor: '#d0d0d0',
+    margin: "3px"
+  }
 
   return (
     <div>
@@ -18,14 +43,24 @@ const App = () => {
       <Link to='/books' className='button-style'>
         <button>books</button>
       </Link>
-      <Link to='/addbook'>
+      {token && <Link to='/addbook'>
         <button>add book</button>
-      </Link>
+      </Link>}
+      {token && <Link to='/favorites'>
+        <button>favorites</button>
+      </Link>}
+      {token && <button onClick={logout}>logout</button> }
+      {!token && <Link to='/login'>
+        <button>login</button>
+      </Link>}
+      {error && <div style={errorStyle}>{error}</div>}
       <Routes>
         <Route path='/' element={<div>Hello</div>}/>
         <Route path='/authors' element={<Authors />}/>
         <Route path='/books' element={<Books />}/>
-        <Route path='/addbook' element={<NewBook />}/>
+        {token && <Route path='/favorites' element={<FavoriteBooks />}/>}
+        {token && <Route path='/addbook' element={<NewBook timedError={timedError}/>}/>}
+        {!token && <Route path='/login' element={<LoginForm setToken={setToken} timedError={timedError}/>}/>}
       </Routes>
     </div>
   )

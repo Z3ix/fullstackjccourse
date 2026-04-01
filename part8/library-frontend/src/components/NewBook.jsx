@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ADD_BOOK, ALL_BOOKS } from '../queries/books'
 import { ALL_AUTHORS } from '../queries/authors'
 
-const NewBook = (props) => {
+const NewBook = ({timedError}) => {
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [published, setPublished] = useState('')
@@ -11,6 +11,7 @@ const NewBook = (props) => {
   const [genres, setGenres] = useState([])
 
   const [addBookMutation] = useMutation(ADD_BOOK)
+  const [error, setError] = useState('')
 
 
   const submit = async (event) => {
@@ -24,10 +25,23 @@ const NewBook = (props) => {
         published: Number(published),
         genres
       },
-      refetchQueries: [
-        { query: ALL_AUTHORS},
-        { query: ALL_BOOKS}
-      ]
+
+      onError: (e) => {
+        timedError(e.message,10)
+      },
+      update: (cache, response) => {
+        cache.updateQuery({query: ALL_BOOKS},(data) => {
+          const res = data.allBooks.concat(response.data.addBook)
+          return {allBooks: res}
+        })
+        response.data.addBook.genres.forEach(item => {
+          cache.updateQuery({query:ALL_BOOKS, variables:{genre:item}},(data) =>{
+            console.log('updating cache for genre',item)
+            const res = data.allBooks.concat(response.data.addBook)
+            return {allBooks: res} 
+          })
+        })
+      }
     })
 
     setTitle('')
@@ -44,6 +58,7 @@ const NewBook = (props) => {
 
   return (
     <div>
+      
       <form onSubmit={submit}>
         <div>
           title
