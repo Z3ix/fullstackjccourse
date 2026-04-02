@@ -2,6 +2,7 @@ import { useMutation } from '@apollo/client/react'
 import { useState } from 'react'
 import { ADD_BOOK, ALL_BOOKS } from '../queries/books'
 import { ALL_AUTHORS } from '../queries/authors'
+import { addBookToCache } from '../utils/cacheHelper'
 
 const NewBook = ({timedError}) => {
   const [title, setTitle] = useState('')
@@ -29,18 +30,8 @@ const NewBook = ({timedError}) => {
       onError: (e) => {
         timedError(e.message,10)
       },
-      update: (cache, response) => {
-        cache.updateQuery({query: ALL_BOOKS},(data) => {
-          const res = data.allBooks.concat(response.data.addBook)
-          return {allBooks: res}
-        })
-        response.data.addBook.genres.forEach(item => {
-          cache.updateQuery({query:ALL_BOOKS, variables:{genre:item}},(data) =>{
-            console.log('updating cache for genre',item)
-            const res = data.allBooks.concat(response.data.addBook)
-            return {allBooks: res} 
-          })
-        })
+      update: (cache, response) =>{
+        addBookToCache(cache, response.data.addBook) 
       }
     })
 

@@ -1,5 +1,6 @@
 const {v1: uuid} = require('uuid')
 const { GraphQLError } = require('graphql')
+const { PubSub } = require('graphql-subscriptions')
 
 const Book = require('./models/Book')
 const Author = require('./models/Author')
@@ -8,6 +9,8 @@ const mongoose = require('mongoose')
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
+
+const pubsub = new PubSub()
 
 let books = [
   {
@@ -113,6 +116,24 @@ const resolvers = {
     },
   },
   Mutation: {
+    updateAuthors: async () => {
+      const books = await Book.find({})
+      const authors = await Author.find({})
+      for(const author of authors){
+        const booksOfAuthor = books.filter(item => item.author == author.id).map(item => item._id)
+        author.books = booksOfAuthor
+        console.log(`Found ${author.books.length} books for ${author.name}. Saving`)
+        try {
+          await author.save()
+        } catch (e){
+          console.log(`Error appeared`)
+          console.log(e)
+        }
+        console.log('saved')
+      }
+      console.log('done')
+      return true
+    },
     insertData: async () => {
         const a = authors.map(item => {return {name: item.name, born: item.born}})
         await Author.insertMany(a)
@@ -188,19 +209,21 @@ const resolvers = {
             }
         }
         let book = {...args, author: author._id}
-        const newBook = new Book(book)
+        let newBook = new Book(book)
         try {
           await newBook.save()
         } catch (error) {
           throw new GraphQLError(`could not create Book: ${error.message}`,{
             extensions: {
               code: 'BAD_USER_INPUT',
-              invalidArgs: args.name,
+              invalidArgs: args,
           },})
         }
         console.log('saved')
+        newBook = await newBook.populate('author')
+        pubsub.publish('BOOK_ADDED',{bookAdded: newBook})
 
-        return newBook.populate('author')
+        return newBook
     },
     editAuthor: async (root, args,context) => {
         if (!context.currentUser) {
@@ -223,12 +246,20 @@ const resolvers = {
         return curAuthor
     }
   },
-    Author: {
-        bookCount: async (root, args) => {
-            const booksByAuthor = await Book.find({author: root._id})
-            return booksByAuthor.length
-        }
-    }
+  Subscription: {
+    bookAdded: {
+      subscribe: () => 
+        {
+          console.log('have subscriber to book added')
+          return pubsub.asyncIterableIterator('BOOK_ADDED')
+        },
+    },
+  },
+  Author: {
+      bookCount: async (root, args) => {
+          return root.books.length
+      }
   }
+}
 
-  module.exports = resolvers
+module.exports = resolvers

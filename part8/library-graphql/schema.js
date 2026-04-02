@@ -1,4 +1,7 @@
 const typeDefs = `
+    type Subscription {
+        bookAdded: Book
+    }
     type User {
         username: String!
         favoriteGenre: String!
@@ -24,6 +27,7 @@ const typeDefs = `
     }
     type Mutation {
         insertData(action: String): Boolean
+        updateAuthors : Boolean
         addBook(
             title: String!
             author: String!

@@ -4,14 +4,23 @@ import Books from './components/Books'
 import NewBook from './components/NewBook'
 import { Link, Route, Routes, useNavigate } from 'react-router'
 import LoginForm from './components/Login'
-import { useApolloClient } from '@apollo/client/react'
+import { useApolloClient, useSubscription } from '@apollo/client/react'
 import FavoriteBooks from './components/FavoriteBooks'
+import { BOOK_ADDED } from './queries/books'
+import { addBookToCache } from './utils/cacheHelper'
 
 const App = () => {
   const [token, setToken] = useState(window.localStorage.getItem('userToken'))
   const [error, setError] = useState('')
   const client = useApolloClient()
   const navigate = useNavigate()
+
+  useSubscription(BOOK_ADDED, {
+    onData: ({ data }) => {
+      addBookToCache(client.cache, data.data.bookAdded)
+      timedError(`Book ${data.data.bookAdded.title} ${data.data.bookAdded.published} was added`, 15)
+    },
+  })
 
   const timedError = (message, delay) => {
     setError(message)
